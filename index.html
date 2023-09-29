@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HTML FPS Game made by ChatGPT</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        // Set canvas dimensions
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Player object
+        const player = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            speed: 5,
+            radius: 10,
+            angle: 0,
+            dx: 0,
+            dy: 0,
+        };
+
+        // Bullets array
+        const bullets = [];
+
+        // Enemies array
+        const enemies = [];
+
+        // Event listener for shooting
+        window.addEventListener("click", (e) => {
+            const angle = Math.atan2(player.y - e.clientY, e.clientX - player.x);
+            bullets.push({
+                x: player.x,
+                y: player.y,
+                speed: 10,
+                radius: 3,
+                direction: angle,
+            });
+        });
+
+        // Function to spawn enemies
+        function spawnEnemy() {
+            const side = Math.floor(Math.random() * 4); // Random side (0-3)
+            let x, y;
+
+            switch (side) {
+                case 0: // Top
+                    x = Math.random() * canvas.width;
+                    y = 0;
+                    break;
+                case 1: // Right
+                    x = canvas.width;
+                    y = Math.random() * canvas.height;
+                    break;
+                case 2: // Bottom
+                    x = Math.random() * canvas.width;
+                    y = canvas.height;
+                    break;
+                case 3: // Left
+                    x = 0;
+                    y = Math.random() * canvas.height;
+                    break;
+            }
+
+            const enemy = {
+                x,
+                y,
+                speed: Math.random() * 2 + 2, // Random speed between 2 and 4
+                radius: 10,
+                angle: 0,
+            };
+
+            enemies.push(enemy);
+        }
+
+        // Game loop
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Update player position
+            player.x += player.dx;
+            player.y += player.dy;
+
+            // Update and draw bullets
+            bullets.forEach((bullet, bulletIndex) => {
+                bullet.x += Math.cos(bullet.direction) * bullet.speed;
+                bullet.y -= Math.sin(bullet.direction) * bullet.speed;
+
+                // Remove bullets that go out of bounds
+                if (bullet.x < 0 || bullet.x > canvas.width || bullet.y < 0 || bullet.y > canvas.height) {
+                    bullets.splice(bulletIndex, 1);
+                }
+
+                ctx.fillStyle = "red";
+                ctx.beginPath();
+                ctx.arc(bullet.x, bullet.y, bullet.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Check for collisions with enemies
+                enemies.forEach((enemy, enemyIndex) => {
+                    const distance = Math.sqrt((bullet.x - enemy.x) ** 2 + (bullet.y - enemy.y) ** 2);
+                    if (distance < bullet.radius + enemy.radius) {
+                        bullets.splice(bulletIndex, 1);
+                        enemies.splice(enemyIndex, 1);
+                    }
+                });
+            });
+
+            // Update and draw enemies
+            enemies.forEach((enemy, enemyIndex) => {
+                enemy.angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
+                enemy.x += Math.cos(enemy.angle) * enemy.speed;
+                enemy.y += Math.sin(enemy.angle) * enemy.speed;
+
+                ctx.fillStyle = "green";
+                ctx.beginPath();
+                ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Check for player-enemy collision
+                const distance = Math.sqrt((player.x - enemy.x) ** 2 + (player.y - enemy.y) ** 2);
+                if (distance < player.radius + enemy.radius) {
+                    // Game over or some other logic here
+                    alert("Game Over!");
+                    location.reload(); // Reload the page to restart the game
+                }
+            });
+
+            // Draw the player
+            ctx.fillStyle = "blue";
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Spawn enemies randomly
+            if (Math.random() < 0.02) { // Adjust the spawn rate as needed
+                spawnEnemy();
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Event listeners for keydown and keyup events for player movement
+        window.addEventListener("keydown", (e) => {
+            if (e.key === "w") player.dy = -player.speed;
+            if (e.key === "s") player.dy = player.speed;
+            if (e.key === "a") player.dx = -player.speed;
+            if (e.key === "d") player.dx = player.speed;
+        });
+
+        window.addEventListener("keyup", (e) => {
+            if (e.key === "w" || e.key === "s") player.dy = 0;
+            if (e.key === "a" || e.key === "d") player.dx = 0;
+        });
+
+        // Event listener for mouse movement to rotate the player's angle
+        canvas.addEventListener("mousemove", (e) => {
+            player.angle = Math.atan2(e.clientY - player.y, e.clientX - player.x);
+        });
+
+        gameLoop();
+    </script>
+</body>
+</html>
+
+
